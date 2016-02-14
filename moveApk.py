@@ -3,7 +3,7 @@
 ###############################################################
 ########                  moveApk.py                   ######## 
 ########             Made by Thomas Roberts            ######## 
-########                  13/02/2014                   ########
+########                  14/02/2016                   ########
 ###############################################################
 
 import os
@@ -17,7 +17,7 @@ import shutil
 # Input :- Destination DIR
 # Output :- None
 # Description:- This function will move all *.apk's in one directory 
-# and move then to another directory in their respective directory
+# and put them in their respective folders
 def moveApks(source, destination, move):
     # Return Value initialisations
     returnValue = True
@@ -26,13 +26,13 @@ def moveApks(source, destination, move):
     # Scan the sour DIR to find all APK's init
     apks = [f for f in os.listdir(source) if f.endswith('apk')]
     
-    if (len(apks) > 1):
+    if (len(apks) > 0):
         logging.info("Found %d APK's to move", len(apks))
         for i in range(len(apks)):
             # Start moving APK's
-            src = source + "/" + apks[i]
-            destDir = destination + "/" +apks[i].replace(".apk", "")
-            dest =  destDir + "/" + apks[i]
+            src = os.path.abspath(source + "/" + apks[i])
+            destDir = os.path.abspath(destination + "/" +apks[i].replace(".apk", ""))
+            dest =  os.path.abspath(destDir + "/" + apks[i])
             if not os.path.isdir(destDir):
                 os.mkdir(destDir)
 
@@ -46,7 +46,8 @@ def moveApks(source, destination, move):
         # We didn't find any APK's
         logging.error("Found no APK's in %s", source)
         returnValue = False
-        return returnValue
+        
+    return returnValue
 
 
 # Check Arguments
@@ -56,23 +57,25 @@ def moveApks(source, destination, move):
 # This function will check the source and destination directory
 def checkArgs(source, destination):
 
+    returnValue = True
+    
     if not os.path.isdir(source):
         logging.error("Source directory %s doesn't exist", source)
-        return False
+        returnValue = False
 
     if not os.path.isdir(destination):
         logging.warning("Destination %s doesn't exist", destination)
         logging.info("Making destination directory as it doesn't exists")
-        os.mkdir(destination)
+        os.makedirs(destination)
 
-    return True
+    return returnValue
 
 # Yes No Prompt
 # Input:- Question
 # Input:- default answer (default is yes unless changed)
 # Output:- Boolean
 # Description :- Prompt the user with a yes no question and return boolean.
-def query_yes_no(question, default="yes"):
+def queryYesNo(question, default="yes"):
 
     valid = {"yes": True, "y": True, "ye": True,
              "no": False, "n": False}
@@ -129,6 +132,13 @@ if __name__ == "__main__":
                         moveApks(sys.argv[1], sys.argv[2], True)
                     else:
                         logging.error("Failed when checking arguments")
+                else:
+                    logging.warning("Invalid move flag, so we will just copy instead")
+                    # Move flag is set
+                    if (checkArgs(sys.argv[1], sys.argv[2])):
+                        moveApks(sys.argv[1], sys.argv[2], False)
+                    else:
+                        logging.error("Failed when checking arguments")
             else:
                 # Move flag isn't set
                 if (checkArgs(sys.argv[1], sys.argv[2])):
@@ -139,7 +149,7 @@ if __name__ == "__main__":
         # We have no arguments pass to use we will prompt the user
         src = raw_input("Please enter a source directory: ")
         dest = raw_input("Please enter a destination directory: ")
-        mvOpt = query_yes_no("Would you like to move the APKs instead of copy?")
+        mvOpt = queryYesNo("Would you like to move the APKs instead of copy?")
 
         if (mvOpt):
             # Move flag is set
